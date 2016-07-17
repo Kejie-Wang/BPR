@@ -1,2 +1,10 @@
 *.vcxproj
 *.vcxproj.filters
+*.vcxproj.user
+Debug/
+**/*.o
+**/*.exe
+yelp_dataset/*.train
+yelp_dataset/*.test
+yelp_dataset/*.stat
+yelp_dataset/*.validation
