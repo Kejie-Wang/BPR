@@ -12,6 +12,12 @@ and uses [***amazon dataset***](http://jmcauley.ucsd.edu/data/amazon/)
 - **main.c**: the testing main program
 
 ## how to run this program
-enter the root directory of this project
-''
+First you should download the project `git clone https://github.com/JackWang822/BPR.git`
+### windows (IDE)
+take the visual studio as example  
+first new an empty project and then add all source code into the project, including the file in the MF, BPR, GenaralStruct and Evaluation directory and the main.c in the root directory and build the program
+### linux
+after downloading the project, enter the root directory of this project `cd BPR`  
+use make command to build the project(*make file is not in the directory*) `make`  
 
+## extend
