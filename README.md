@@ -21,3 +21,15 @@ after downloading the project, enter the root directory of this project `cd BPR`
 use make command to build the project(*make file is not in the directory*) `make`  
 
 ## extend
+In the main program, it use the amazon dataset to test, for the consideration of the size of the dataset, the source dataset is not in the amazon_dataset directtory. And thus, if you want to run this program, you can download the amazon dataset from 
+http://jmcauley.ucsd.edu/data/amazon/ by yourself. In the amazon dataset directory, there are some script to handle the source dataset. The *amazon_parse.py* script can 
+
+
+
+
+
+
+
+  
+    
+      
