@@ -1,6 +1,6 @@
 # BPR algorithm
 The procedure implements the essay [***BPR: Bayesian Personalized Ranking from Implicit Feedback*** ](https://www.ismll.uni-hildesheim.de/pub/pdfs/Rendle_et_al2009-Bayesian_Personalized_Ranking.pdf)
-and uses [***amazon dataset***](http://jmcauley.ucsd.edu/data/amazon/)
+and uses [***amazon dataset***](http://jmcauley.ucsd.edu/data/amazon/) to test
 
 ## Project structure
 - **Evaluation**: some evaluation function, such as the precision, recall, AUC calculation
@@ -44,6 +44,8 @@ If you want to test the different parameters, you can change the parameter in th
 
 The program use top-N recommendation to recommd and it will run as top-2, 5, 10, 20, 40, 80, 100 and if you want to change the N value, you can change in the main.c program.
 
+## Contact
+This project is maintained by WANG Kejie <wang_kejie@foxmail.com> and if you have some problems or find some bugs in the procedure, please send me the email.
 
 
 
