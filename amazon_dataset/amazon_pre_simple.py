@@ -1,6 +1,6 @@
 '''
 @brief This is the pre-processing procedure for the MF and BPR algorithms 
-	   it just simplily selects the user, product and rating
+	   it just simplily selects the user, product and rating with only one file (catagory)
 	   one item occupies one line with the format (seprated by a blank): uid vid rating
 	   		uid:	an integer represents the user id (1, 2, 3, ......)
 	   		vid: 	an integer represents the product id (1, 2, 3, ......)
@@ -52,6 +52,9 @@ with open(path) as fpRawData:
 			item[vid_data] = vid
 
 		fpRating.write("%d %d %.01f\n" %(uid, vid, rating))
+
+print "user number:", userNum
+print "item number", itemNum
 
 fpRating.close()
 fpRawData.close()
