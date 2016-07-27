@@ -9,3 +9,8 @@ and uses [***amazon dataset***](http://jmcauley.ucsd.edu/data/amazon/)
 - **BPR**: the implenmentation of Bayesian Personalized Ranking algorithms
 - **amazon_dataset**: the directory of amazon dataset and some python script to handle the source amazon dataset
 - **yelp_dataset**: the directory of yelp dataset and some python script to handle the source amazon dataset
+- **main.c**: the testing main program
+
+## how to run this program
+- enter the root directory of this project
+
