@@ -42,7 +42,7 @@ If you want to test the different parameters, you can change the parameter in th
     - **alpha**: learning rate of the Gradient descent algorithms
     - ***lambdaUV**: the coefficient of the regularization    
 
-
+The program use top-N recommendation to recommd and it will run as top-2, 5, 10, 20, 40, 80, 100 and if you want to change the N value, you can change in the main.c program.
 
 
 
