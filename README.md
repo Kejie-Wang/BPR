@@ -30,14 +30,18 @@ In the amazon dataset directory, there are some script to handle the source data
 
 If you want to use another dataset, you should save the dataset as the format *`uid vid rating`* and one line per item and the dataset name must end with _rating.data. And then in the main program you should change the dataname path.  
 
-If you want to test the different parameters, you can change the parameter in the function ***setMFParams*** and ***setBPRParams*** in the ***main.c*** program.  
-- MF Parameters (***M = U * V***):
+If you want to test the different parameters, you can change the parameter in the function ***setMFParams*** and ***setBPRParams*** in the ***main.c*** program. You can change the value of each parameter and run the program.
+- MF Parameters: (***M = U * V***):
     - **alpha**: learning rate of the Gradient descent algorithms
 	- **Learn_loop**: maximum learning loop of the Gradient descent
 	- **lambdaUV**: the coefficient of the regularization of the matrix U and V 
-	- **lambdaBias**:
-	- **sw_reg**;
-	- **sw_bias**;
+	- **lambdaBias**: the coefficient of the regularization of the Bias 
+	- **sw_reg**: whether use regularization 0->not, else-> yes
+	- **sw_bias**: whether use bias 0->not, else-> yes
+- BPR Parameters:
+    - **alpha**: learning rate of the Gradient descent algorithms
+    - ***lambdaUV**: the coefficient of the regularization    
+
 
 
 
