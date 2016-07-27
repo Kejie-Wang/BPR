@@ -26,7 +26,18 @@ http://jmcauley.ucsd.edu/data/amazon/ by yourself.
 In the amazon dataset directory, there are some script to handle the source dataset.   
 - ***amazon_parse.py:*** this script can parse the json.gz file into json file. Run the amazon_parse.py as `python amazon_parse.py xxx.json.jz`  
 - ***amazon_pre_simple:*** this script can extract the useful information for the program which simplily extracts the user identify, product identify and rating information and saves as the .data file. Run it as `python amazon_pre_simple.py xxx.json`  
-- ***amazon_pre_mixture:*** this script can mix the many source json dataset into a file which can run by the program. The script will read 10000 users (can change in the script) for each input file and all their related rating record. 
+- ***amazon_pre_mixture:*** this script can mix the many source json dataset into a file which can run by the program. The script will read 10000 users (can change in the script) for each input file and all their related rating record. Run it as `python amazon_pre_mixture.py xxx1.json xxx2.json xxx3.json`   
+
+If you want to use another dataset, you should save the dataset as the format *`uid vid rating`* and one line per item and the dataset name must end with _rating.data. And then in the main program you should change the dataname path.  
+
+If you want to test the different parameters, you can change the parameter in the function ***setMFParams*** and ***setBPRParams*** in the ***main.c*** program.  
+- MF Parameters (***M = U * V***):
+    - **alpha**: learning rate of the Gradient descent algorithms
+	- **Learn_loop**: maximum learning loop of the Gradient descent
+	- **lambdaUV**: the coefficient of the regularization of the matrix U and V 
+	- **lambdaBias**:
+	- **sw_reg**;
+	- **sw_bias**;
 
 
 
