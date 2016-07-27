@@ -12,5 +12,6 @@ and uses [***amazon dataset***](http://jmcauley.ucsd.edu/data/amazon/)
 - **main.c**: the testing main program
 
 ## how to run this program
-- enter the root directory of this project
+enter the root directory of this project
+''
 
