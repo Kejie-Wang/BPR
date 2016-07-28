@@ -3,7 +3,7 @@
 #include <time.h>
 #include "gvStruct.h"
 
-PREVIEW_ON_ITEM* initialRatingMatrix(char* filename, PREVIEW_ON_ITEM* rating_matrix)
+void initialRatingMatrix(char* filename, PREVIEW_ON_ITEM* rating_matrix)
 {
 	FILE *inputFile = fopen(filename,"r");
 	int uid, vid;
@@ -12,7 +12,8 @@ PREVIEW_ON_ITEM* initialRatingMatrix(char* filename, PREVIEW_ON_ITEM* rating_mat
 	while (!feof(inputFile))
 	{
 		// read each line of the file
-		fscanf(inputFile,"%d %d %f\n",&uid,&vid,&rating);
+		fscanf(inputFile,"%d %d %f",&uid,&vid,&rating);
+		rating = 1.0f;
 		if (rating_matrix[uid])
 		{
 			PREVIEW_ON_ITEM point_cursor;
@@ -59,8 +60,6 @@ PREVIEW_ON_ITEM* initialRatingMatrix(char* filename, PREVIEW_ON_ITEM* rating_mat
 		}
 	}
 	fclose(inputFile);
-	
-	return rating_matrix;
 }
 
 void initialFeatureVector(double (*featureV)[D], int num)
@@ -168,4 +167,46 @@ void leaveOneOut(PREVIEW_ON_ITEM* test, PREVIEW_ON_ITEM* all, int usernum)
 			point_rating=point_rating->next;
 		}
 	}
+}
+ 
+int saveRecommList(RECOMM_NODE(*recomm_list)[MAXN], char* filename, int usernum)
+{
+	FILE* fp = fopen(filename, "w");
+
+	if (fp == NULL)
+		return -1;
+	for (int uid = 1; uid < usernum; ++uid)
+	{
+		for (int i = 0; i < MAXN; ++i)
+		{
+			int vid = recomm_list[uid][i].vid;
+			double rating = recomm_list[uid][i].eval_rating;
+			fprintf(fp, "%d %d %f\n", uid, vid, rating);
+		}
+	}
+	fclose(fp);
+
+	return 0;
+}
+
+int loadRecommList(RECOMM_NODE(*recomm_list)[MAXN], char* filename, int usernum)
+{
+	FILE* fp = fopen(filename, "w");
+
+	if (fp == NULL)
+		return -1;
+	for (int uid = 1; uid < usernum; ++uid)
+	{
+		for (int i = 0; i < MAXN; ++i)
+		{
+			int vid = 1;
+			double rating = 0;
+			fscanf(fp, "%d %d %f\n", uid, vid, rating);
+			recomm_list[uid][i].vid = vid;
+			recomm_list[uid][i].eval_rating = rating;
+		}
+	}
+	fclose(fp);
+
+	return 0;
 }
