@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 #include "../GeneralStruct/gvStruct.h"
 #include "recomm.h"
 
@@ -24,7 +25,7 @@ double rmse(double(*U)[D],double(*V)[D],double*bu,double*bv,double*item_mean,PRE
 				{
 					eval+=U[i][d]*V[point_rating->vid][d];
 				}
-				eval+=bu[i]+bv[point_rating->vid];
+				eval+=total_mean+bu[i]+bv[point_rating->vid];
 			}
 			else if (!rm_train[i] && item_mean[point_rating->vid]!=-1)
 			{
@@ -44,13 +45,52 @@ double rmse(double(*U)[D],double(*V)[D],double*bu,double*bv,double*item_mean,PRE
 	return sqrt(mse/mse_count);
 }
 
+double rmse_implicit(double(*U)[D], double(*V)[D], double*bu, double*bv, double*item_mean, PREVIEW_ON_ITEM* \
+	rm_test, PREVIEW_ON_ITEM* rm_train, int usernum, int itemnum, double total_mean)
+{
+	double mse = 0;
+	int mse_count = 0;
+	int debug_count = 0;
+
+	int *filter_item = (int *)malloc(sizeof(int) * itemnum);
+	for (int i = 1; i < usernum; ++i)
+	{
+		PREVIEW_ON_ITEM point_rating;
+		point_rating = rm_test[i - 1];
+		while (point_rating)
+		{
+			filter_item[i] = 0;
+			point_rating = point_rating->next;
+		}
+		point_rating = rm_test[i];
+		while (point_rating)
+		{
+			filter_item[point_rating->vid] = 1;
+			point_rating = point_rating->next;
+		}
+		for (int vid = 1; vid < itemnum; ++vid)
+		{
+			float rating = filter_item[vid];
+			double eval = 0;
+			for (int d = 0; d < D; ++d)
+			{
+				eval += U[i][d] * V[vid][d];
+			}
+			eval += total_mean + bu[i] + bv[vid];
+			mse += (eval - rating) * (eval - rating);
+			mse_count++;
+		}
+	}
+	return sqrt(mse / mse_count);
+}
+
 void makeRecommend(double(*U)[D],double(*V)[D],double*bu,double*bv,PREVIEW_ON_ITEM*rm_train,\
-	double*item_mean, RECOMM_NODE(*recomm_list)[_N], int usernum, int itemnum,double total_mean)
+	double*item_mean, RECOMM_NODE(*recomm_list)[MAXN], int usernum, int itemnum,double total_mean)
 {
 	// initialize the recommend list
 	for (int i = 1; i < usernum; ++i)
 	{
-		for (int j = 0; j < _N; ++j)
+		for (int j = 0; j < MAXN; ++j)
 		{
 			recomm_list[i][j].eval_rating = 0;
 			recomm_list[i][j].real_rating = 0;
@@ -58,19 +98,23 @@ void makeRecommend(double(*U)[D],double(*V)[D],double*bu,double*bv,PREVIEW_ON_IT
 		}
 	}
 	// for each user
+	int *filter_item = (int *)malloc(sizeof(int) * itemnum);
 	for (int uid = 1; uid < usernum; ++uid)
 	{
-		if (DEBUG)
+		if (uid % 10000 == 0)
 		{
 			printf("%d\n", uid);
-		}
-		// used to filter out the items in training set
-		int *filter_item = (int *)malloc(sizeof(int) * itemnum);
-		for (int i = 0; i < itemnum; ++i)
-		{
-			filter_item[i] = 0;
-		}
+		}	
 		PREVIEW_ON_ITEM point_rating;
+		//reset the filter item
+		//set the filter item to zero of the last user
+		point_rating = rm_train[uid - 1];
+		while (point_rating)
+		{
+			filter_item[point_rating->vid] = 0;
+			point_rating = point_rating->next;
+		}
+		//set the filter item to one of this user
 		point_rating = rm_train[uid];
 		while (point_rating)
 		{
@@ -107,9 +151,11 @@ void makeRecommend(double(*U)[D],double(*V)[D],double*bu,double*bv,PREVIEW_ON_IT
 			// first case, uid and vid all in training set
 			if (rm_train[uid] && item_mean[vid]!=-1)
 			{
-				eval = multiVector(U[uid],V[vid],D);
-				eval+=bu[uid]+bv[vid];
+				eval = total_mean + multiVector(U[uid],V[vid],D);
+				
 			}
+			if(bu[uid] && bv[vid])
+				eval += bu[uid] + bv[vid];
 			// second case, uid is not in traing set, vid is in training set
 			// use item_mean as the evaluation
 			else if (!rm_train[uid] && item_mean[vid]!=-1)
@@ -124,7 +170,7 @@ void makeRecommend(double(*U)[D],double(*V)[D],double*bu,double*bv,PREVIEW_ON_IT
 			}
 
 			// rank the item by evaluation
-			for (int n = 0; n < _N; ++n)
+			for (int n = 0; n < MAXN; ++n)
 			{
 				if (eval>recomm_list[uid][n].eval_rating)
 				{
@@ -142,35 +188,33 @@ void makeRecommend(double(*U)[D],double(*V)[D],double*bu,double*bv,PREVIEW_ON_IT
 					}
 				}
 			}
-		}
-
-		free(filter_item);
+		}	
 	}
+	free(filter_item);
 }
-double Precision(RECOMM_NODE(*recomm_list)[_N],PREVIEW_ON_ITEM* rm_test, int usernum)
+
+void PrecisionAndRecall(RECOMM_NODE(*recomm_list)[MAXN],PREVIEW_ON_ITEM* rm_test, int usernum, double* precision, double* recall, int N)
 {
-	double precision = 0;
 	int totalhit = 0;
-	int testnum = 0;
+	int recommUserNum = 0, testNum = 0;
 	for (int i = 1; i < usernum; ++i)
 	{
-		int hit=0;
 		PREVIEW_ON_ITEM point_rating;
 		point_rating = rm_test[i];
 		if (point_rating==NULL)
 		{
 			continue;
 		}
-		testnum++;
+		recommUserNum++;
 		while (point_rating)
 		{
 			if (point_rating->rating > 0)
 			{
-				for (int n = 0; n < _N; ++n)
+				testNum++;
+				for (int n = 0; n < N; ++n)
 				{
 					if (recomm_list[i][n].vid == point_rating->vid)
 					{
-						hit++;
 						totalhit++;
 						// printf("%d %d\n", i, totalhit);
 						break;
@@ -179,12 +223,13 @@ double Precision(RECOMM_NODE(*recomm_list)[_N],PREVIEW_ON_ITEM* rm_test, int use
 			}
 			point_rating = point_rating->next;
 		}
-		precision += (double)hit/_N;
 	}
 	printf("totalhit:%d\n", totalhit);
 
-	return precision/testnum;
+	*precision = 1.0 * totalhit / N / recommUserNum;
+	*recall = 1.0 * totalhit / testNum;
 }
+
 double AUC(double(*U)[D], double(*V)[D], double*bv,PREVIEW_ON_ITEM* rm_test, PREVIEW_ON_ITEM* rm_train,\
 	int usernum, int itemnum, int type)
 {
@@ -274,7 +319,7 @@ double AUC(double(*U)[D], double(*V)[D], double*bv,PREVIEW_ON_ITEM* rm_test, PRE
 	return total_auc/test_usernum;
 }
 
-double nDCG(RECOMM_NODE(*recomm_list)[_N],PREVIEW_ON_ITEM* rm_test, int usernum, int type)
+double nDCG(RECOMM_NODE(*recomm_list)[MAXN],PREVIEW_ON_ITEM* rm_test, int usernum, int type)
 {
 	//for each user, compute TOP-K item list:
 	int count = 0;
@@ -310,9 +355,9 @@ double nDCG(RECOMM_NODE(*recomm_list)[_N],PREVIEW_ON_ITEM* rm_test, int usernum,
 		// rank the item in test set
 		if (type == EXPLISIT)
 		{
-			RECOMM_NODE test_rank[_N];
+			RECOMM_NODE test_rank[MAXN];
 			// initialize the test rank list
-			for (int j = 0; j < _N; ++j)
+			for (int j = 0; j < MAXN; ++j)
 			{
 				test_rank[j].real_rating = 0;
 				test_rank[j].vid = -1;
@@ -322,7 +367,7 @@ double nDCG(RECOMM_NODE(*recomm_list)[_N],PREVIEW_ON_ITEM* rm_test, int usernum,
 			while (point_rating)
 			{
 				// rank the item by evaluation
-				for (int n = 0; n < _N; ++n)
+				for (int n = 0; n < MAXN; ++n)
 				{
 					if (point_rating->rating>test_rank[n].real_rating)
 					{
@@ -346,7 +391,7 @@ double nDCG(RECOMM_NODE(*recomm_list)[_N],PREVIEW_ON_ITEM* rm_test, int usernum,
 		else if (type == IMPLISIT)
 		{
 			int max_N;
-			max_N = _N>count_item_test[uid]?_N:count_item_test[uid];
+			max_N = MAXN>count_item_test[uid]? MAXN :count_item_test[uid];
 			for (int j = 0; j < max_N; ++j)
 			{
 				Zu += 1 / log2(j + 2);
@@ -354,11 +399,11 @@ double nDCG(RECOMM_NODE(*recomm_list)[_N],PREVIEW_ON_ITEM* rm_test, int usernum,
 			point_rating = rm_test[uid];
 			while (point_rating)
 			{
-				for (int n = 0; n < _N; ++n)
+				for (int n = 0; n < MAXN; ++n)
 				{
 					if (recomm_list[uid][n].vid == point_rating->vid)
 					{
-						ndcg += 1 / log2(_N-n + 1)/Zu;
+						ndcg += 1 / log2(MAXN -n + 1)/Zu;
 						// printf("ndcg hit:%f\n",ndcg);
 						break;
 					}
@@ -378,13 +423,13 @@ double nDCG(RECOMM_NODE(*recomm_list)[_N],PREVIEW_ON_ITEM* rm_test, int usernum,
 }
 
 void makeRecommend_price(double(*U)[D],double(*V)[D],double*bu,double*bv,PREVIEW_ON_ITEM*rm_train,\
-	int*trained_item, RECOMM_NODE(*recomm_list)[_N], int usernum, int itemnum, double total_mean,\
+	int*trained_item, RECOMM_NODE(*recomm_list)[MAXN], int usernum, int itemnum, double total_mean,\
 	USER_INFO* userlist, ITEM_INFO* itemlist, double penalty, int type)
 {
 	// initialize the recommend list
 	for (int i = 1; i < usernum; ++i)
 	{
-		for (int j = 0; j < _N; ++j)
+		for (int j = 0; j < MAXN; ++j)
 		{
 			recomm_list[i][j].eval_rating = 0;
 			recomm_list[i][j].real_rating = 0;
@@ -446,7 +491,7 @@ void makeRecommend_price(double(*U)[D],double(*V)[D],double*bu,double*bv,PREVIEW
 				eval -= penalty;
 			}
 			// rank the item by evaluation
-			for (int n = 0; n < _N; ++n)
+			for (int n = 0; n < MAXN; ++n)
 			{
 				if (eval>recomm_list[uid][n].eval_rating)
 				{
