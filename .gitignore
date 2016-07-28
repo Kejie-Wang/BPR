@@ -8,4 +8,8 @@ yelp_dataset/*.train
 yelp_dataset/*.test
 yelp_dataset/*.stat
 yelp_dataset/*.validation
+amazon_dataset/*.data
+amazon_dataset/*.train
+amazon_dataset/*.stat
+amazon_dataset/*.validation
 
