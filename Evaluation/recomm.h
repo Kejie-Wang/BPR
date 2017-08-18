@@ -1,3 +1,8 @@
+#ifndef _RECOMM_H_
+#define _RECOMM_H_
+
+#include "../GeneralStruct/gvStruct.h"
+
 double pow(double x, double y);
 #ifndef FRMSE
 #define FRMSE
@@ -39,4 +44,7 @@ double AUC(double(*U)[D], double(*V)[D], double* bv, PREVIEW_ON_ITEM* rm_test, P
 void makeRecommend_price(double(*U)[D],double(*V)[D],double*bu,double*bv,PREVIEW_ON_ITEM*rm_train,\
 	int*trained_item, RECOMM_NODE(*recomm_list)[MAXN], int usernum, int itemnum, double total_mean,\
 	USER_INFO* userlist, ITEM_INFO* itemlist, double penalty, int type);
+#endif
+
+
 #endif

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
@@ -50,7 +51,6 @@ double rmse_implicit(double(*U)[D], double(*V)[D], double*bu, double*bv, double*
 {
 	double mse = 0;
 	int mse_count = 0;
-	int debug_count = 0;
 
 	int *filter_item = (int *)malloc(sizeof(int) * itemnum);
 	for (int i = 1; i < usernum; ++i)
@@ -326,7 +326,7 @@ double nDCG(RECOMM_NODE(*recomm_list)[MAXN],PREVIEW_ON_ITEM* rm_test, int usernu
 	double ndcg=0;
 	PREVIEW_ON_ITEM point_rating;
 
-	int* count_item_test = malloc(sizeof(int)*usernum);
+	int* count_item_test = (int*)malloc(sizeof(int)*usernum);
 	for (int i = 1; i < usernum; ++i)
 	{
 		count_item_test[i] = 0;

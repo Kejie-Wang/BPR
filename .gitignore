@@ -1,9 +1,4 @@
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
-Debug/
-**/*.o
-**/*.exe
+build
 yelp_dataset/*.train
 yelp_dataset/*.test
 yelp_dataset/*.stat

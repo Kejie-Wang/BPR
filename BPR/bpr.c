@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
-#include "../GeneralStruct/gvStruct.h"
 #include "../Evaluation/recomm.h"
 #include "bpr.h"
 
@@ -18,7 +17,6 @@ void bpr(double (*U)[D],double (*V)[D], PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_IT
 	double alpha = param.alpha;
 	double lambda = param.lambda;
 
-	double opt_obj = 0;
 	int sample_count = 0, random_count, iteration=1;
 	double stop_condition;
 	PREVIEW_ON_ITEM point_rating;
@@ -81,7 +79,6 @@ void bpr(double (*U)[D],double (*V)[D], PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_IT
 
 		double diff=0;
 		double tmp_sigmoid;
-		double debug_diff = 0;
 		for (int d = 0; d < D; ++d)
 		{
 			diff+=(U[uid][d]*V[vid_i][d]-U[uid][d]*V[vid_j][d]);

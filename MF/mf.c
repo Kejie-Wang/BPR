@@ -1,23 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../GeneralStruct/gvStruct.h"
 #include "../Evaluation/recomm.h"
 #include "mf.h"
 
 extern int usernum, itemnum;
-extern int sw_bias, sw_reg;
-
 extern double train_mean;
-
 void matrixFactorization(double (*U)[D],double (*V)[D],double* bu, double*bv, PREVIEW_ON_ITEM* rm_train, \
-PREVIEW_ON_ITEM* rm_validation, double* item_mean){
-	double Alpha = 0.001;
-	double Learn_loop=1000;
-	double LambdaUV = 0.1;
-	double LambdaBias = 0.01;
-	double stop_condition=10;
-	for (int learn_loop = 0; learn_loop < Learn_loop; ++learn_loop)
+PREVIEW_ON_ITEM* rm_validation, double* item_mean, MFParam param)
+{
+	double Alpha = param.alpha;
+	double Learn_loop= param.Learn_loop;
+	double LambdaUV = param.lambdaUV;
+	double LambdaBias = param.lambdaBias;
+	int sw_reg = param.sw_reg;
+    int sw_bias = param.sw_bias;
+    double stop_condition= 10;
+    
+    for (int learn_loop = 0; learn_loop < Learn_loop; ++learn_loop)
 	{
 		double cost = 0;
 		double err = 0;

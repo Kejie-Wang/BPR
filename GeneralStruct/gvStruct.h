@@ -1,3 +1,6 @@
+#ifndef _GVSTRUCT_H_
+#define _GVSTRUCT_H_
+
 // D is the dimension of the U and V matrix
 #ifdef D
 #else
@@ -87,3 +90,5 @@ void leaveOneOut(PREVIEW_ON_ITEM* test, PREVIEW_ON_ITEM* all, int usernum);
 
 int saveRecommList(RECOMM_NODE(*recomm_list)[MAXN], char* filename, int usernum);
 int loadRecommList(RECOMM_NODE(*recomm_list)[MAXN], char* filename, int usernum);
+
+#endif

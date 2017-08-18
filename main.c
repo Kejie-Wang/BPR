@@ -6,9 +6,8 @@
 #include <stdlib.h>
 #include "GeneralStruct/gvStruct.h"
 #include "Evaluation/recomm.h"
-#include "main.h"
-#include "mf/mf.h"
-#include "BPR\bpr.h"
+#include "MF/mf.h"
+#include "BPR/bpr.h"
 
 int usernum, itemnum;
 int sw_bias, sw_reg;
@@ -19,11 +18,11 @@ int test_count = 0;
 double train_mean = 0;
 
 void datasetRead(char* dataname, PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_ITEM* rm_validation, PREVIEW_ON_ITEM* rm_test, \
-	USER_INFO* user_info, ITEM_INFO* item_info, double* item_mean)
+       USER_INFO* user_info, ITEM_INFO* item_info,  double* item_mean)
 {
-	char* trainfile = malloc(sizeof(char) * 128);
-	char* validationfile = malloc(sizeof(char) * 128);
-	char* testfile = malloc(sizeof(char) * 128);
+	char* trainfile = (char*)(malloc(sizeof(char) * 128));
+	char* validationfile = (char*)malloc(sizeof(char) * 128);
+	char* testfile = (char*)malloc(sizeof(char) * 128);
 	strcpy(trainfile, dataname);
 	strcpy(validationfile, dataname);
 	strcpy(testfile, dataname);
@@ -31,12 +30,12 @@ void datasetRead(char* dataname, PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_ITEM* rm_
 	strcat(validationfile, ".validation");
 	strcat(testfile, ".test");
 
-	/*char* userfile = malloc(sizeof(char) * 128);
+	char* userfile = (char*)malloc(sizeof(char) * 128);
 	strcpy(userfile, dataname);
 	strcat(userfile, "_user.info");
-	char* itemfile = malloc(sizeof(char) * 128);
+	char* itemfile = (char*)malloc(sizeof(char) * 128);
 	strcpy(itemfile, dataname);
-	strcat(itemfile, "_item.info");*/
+	strcat(itemfile, "_item.info");
 
 	// the train rating matrix
 	initialRatingMatrix(trainfile, rm_train);
@@ -49,8 +48,8 @@ void datasetRead(char* dataname, PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_ITEM* rm_
 	free(validationfile);
 	free(testfile);
 
-	/*initialUserInfo(userfile, user_info);
-	initialItemInfo(itemfile, item_info);*/
+	initialUserInfo(userfile, user_info);
+	initialItemInfo(itemfile, item_info);
 
 	// possible warning here, if the itemnum is very large, the stack of the program may be used up
 	// initialize item_mean, for evaluate the item's rating for cold user
@@ -121,7 +120,7 @@ void datasetRead(char* dataname, PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_ITEM* rm_
 	//trained_item to represent whether a item has been rated before
 	//0->no one has rated it
 	//1->some one has rated it
-	int* trained_item = malloc(sizeof(int)*itemnum);
+	int* trained_item = (int*)malloc(sizeof(int)*itemnum);
 	for (int i = 1; i < itemnum; ++i)
 	{
 		trained_item[i] = 0;
@@ -138,8 +137,17 @@ void datasetRead(char* dataname, PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_ITEM* rm_
 	}
 }
 
+void initialBiasVector(double* biasV, int num)
+{
+	srand((unsigned)time(NULL));
+	for (int i = 1; i < num; ++i)
+	{
+		biasV[i] = (double)(rand()%1000000)/1000000;
+	}
+}
+
 void mf_recomm(PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_ITEM* rm_validation, PREVIEW_ON_ITEM* rm_test, double *item_mean, double train_mean, \
-	double(*U)[D], double(*V)[D], double *bu, double *bv, RECOMM_NODE(*recomm_list)[MAXN], MFParam param, char *filename)
+	double(*U)[D], double(*V)[D], double *bu, double *bv, RECOMM_NODE(*recomm_list)[MAXN], MFParam param)
 {
 	// initial U, V, bu, bv
 	initialFeatureVector(U, usernum);
@@ -180,8 +188,11 @@ void bpr_recomm(PREVIEW_ON_ITEM* rm_train, PREVIEW_ON_ITEM* rm_validation, PREVI
 	
 	printf("bpr done\n");
 
-	printf("make recommendation here\n");
-	makeRecommend(U, V, NULL, NULL, rm_train, rm_test, recomm_list, usernum, itemnum, train_mean);
+    double test_rmse = rmse(U, V, NULL, NULL, item_mean, rm_test, rm_train, usernum, itemnum, train_mean);
+    printf("Test rmse is %f\n", test_rmse);
+	
+    printf("make recommendation here\n");
+	makeRecommend(U, V, NULL, NULL, rm_train, item_mean, recomm_list, usernum, itemnum, train_mean);
 	printf("make recommendation done\n");
 
 }
@@ -274,112 +285,6 @@ void printBPRParams(BPRParam param)
 	fprintf(stdout, "alpha=%f, lambda=%f\n", param.alpha, param.lambda);
 }
 
-int main(int argc, char const *argv[])
-{
-	//read the data set into the matrix
-	char* dataname = "amazon_dataset/amazon_mixture";
-
-	// execute the python script to generate a traing set and a testing set
-	char* cmd = malloc(sizeof(char) * 256);
-	strcpy(cmd, "python amazon_dataset/amazon_choose.py ");
-	strcat(cmd, dataname);
-	//system(cmd);
-	free(cmd);
-
-	// read in the user number and item number for setting up the array
-	char* statfile = malloc(sizeof(char) * 128);
-	strcpy(statfile, dataname);
-	strcat(statfile, ".stat");
-	FILE *inputFile = fopen(statfile, "r");
-	fscanf(inputFile, "%d %d %d %d %d", &usernum, &itemnum, &train_count, &validation_count, &test_count);
-	fclose(inputFile);
-	free(statfile);
-
-	PREVIEW_ON_ITEM* rm_train = malloc(sizeof(PREVIEW_ON_ITEM)*usernum);
-	PREVIEW_ON_ITEM* rm_validation = malloc(sizeof(PREVIEW_ON_ITEM)*usernum);
-	PREVIEW_ON_ITEM* rm_test = malloc(sizeof(PREVIEW_ON_ITEM)*usernum);
-
-	USER_INFO* user_info = malloc(sizeof(USER_INFO)*usernum);
-	ITEM_INFO* item_info = malloc(sizeof(ITEM_INFO)*itemnum);
-
-	double *item_mean = (double *)malloc(sizeof(double) * itemnum);
-	// initialize the rating matrix
-	for (int i = 0; i < usernum; ++i)
-	{
-		rm_train[i] = NULL;
-		rm_validation[i] = NULL;
-		rm_test[i] = NULL;
-	} 
-	datasetRead(dataname, rm_train, rm_validation, rm_test, user_info, item_info, item_mean);
-
-	
-	// the model matrix
-	double(*U)[D];
-	double(*V)[D];
-	double *bu;
-	double *bv;
-
-	U = malloc(sizeof(double)*D*usernum);
-	V = malloc(sizeof(double)*D*itemnum);
-	bu = malloc(sizeof(double)*usernum);
-	bv = malloc(sizeof(double)*itemnum);
-
-	//Matrix Factorization algorithms test
-	MFParam* mfParams = (MFParam*)(malloc(sizeof(MFParam) * 10));
-	int mfParamsNum = setMFParams(mfParams);
-	RECOMM_NODE(*recomm_list)[MAXN];
-	recomm_list = malloc(sizeof(RECOMM_NODE)*usernum*MAXN);
-
-	for (int i = 0; i < mfParamsNum; ++i)
-	{
-		printMFParams(mfParams[i]);
-		memset(recomm_list, 0, sizeof(RECOMM_NODE)*usernum*MAXN);
-		char *filename = (char*)malloc(sizeof(char) * 128);
-		//if (loadRecommList(recomm_list, filename, usernum) == -1)
-			mf_recomm(rm_train, rm_validation, rm_test, item_mean, train_mean, U, V, bu, bv, recomm_list, mfParams[i], filename);
-
-		// calculate the precision and recall
-		double precision, recall;
-		int Ns[] = { 2, 5, 10, 20, 40, 60, 80, 100 };
-		for (int i = 0; i < 8; ++i)
-		{
-			PrecisionAndRecall(recomm_list, rm_test, usernum, &precision, &recall, Ns[i]);
-			printf("N=%d, precision: %f, recall: %f\n", Ns[i], precision, recall);
-		}
-
-		/*double auc;
-		auc = AUC(U, V, bv, rm_test, rm_train, usernum, itemnum, MF);
-		printf("auc:%f\n", auc);*/
-		//calculate the ndcg
-		/*double ndcg;
-		ndcg = nDCG(recomm_list, rm_test, usernum, IMPLISIT);
-		printf("NDCG:%f\n", ndcg);*/
-	}
-	
-
-	//bpr algorithms test
-	BPRParam* bprParams = (BPRParam*)(malloc(sizeof(BPRParam) * 10));
-	int bprParamsNum = setBPRParams(bprParams);
-	for (int i = 0; i < bprParams; ++i)
-	{
-		printBPRParams(bprParams[i]);
-		memset(recomm_list, 0, sizeof(RECOMM_NODE)*usernum*MAXN);
-		bpr_recomm(rm_train, rm_validation, rm_test, item_mean, train_mean, U, V, recomm_list, bprParams[i]);
-
-		// calculate the precision and recall
-		double precision, recall;
-		PrecisionAndRecall(recomm_list, rm_test, usernum, &precision, &recall, MAXN);
-		printf("precision: %f, recall: %f\n", precision, recall);
-
-		double auc;
-		auc = AUC(U, V, bv, rm_test, rm_train, usernum, itemnum, BPR);
-		printf("auc:%f\n", auc);
-	}
-
-	system("pause");
-	return 0;
-}
-
 void debugRatingMatrix(PREVIEW_ON_ITEM* rm)
 {
 	// debug for filling rating matrix
@@ -410,11 +315,111 @@ void debugRatingMatrix(PREVIEW_ON_ITEM* rm)
 	}
 }
 
-void initialBiasVector(double* biasV, int num)
+
+int main(int argc, char* argv[])
 {
-	srand((unsigned)time(NULL));
-	for (int i = 1; i < num; ++i)
+    if(argc < 2)
+    {
+        fprintf(stderr, "ERR: Missing argument\n");
+        exit(0);
+    }
+
+	//read the data set into the matrix
+	char *dataname = argv[1];
+
+	// read in the user number and item number for setting up the array
+	char* statfile = (char*)malloc(sizeof(char) * 128);
+	strcpy(statfile, dataname);
+	strcat(statfile, ".stat");
+	FILE *inputFile = fopen(statfile, "r");
+    if(inputFile == NULL)
+    {
+        fprintf(stderr, "ERR: %s does NOT exist!\n", statfile);
+        exit(0);
+    }
+	fscanf(inputFile, "%d %d %d %d %d", &usernum, &itemnum, &train_count, &validation_count, &test_count);
+	fclose(inputFile);
+	free(statfile);
+
+	PREVIEW_ON_ITEM* rm_train = (PREVIEW_ON_ITEM*)malloc(sizeof(PREVIEW_ON_ITEM)*usernum);
+	PREVIEW_ON_ITEM* rm_validation = (PREVIEW_ON_ITEM*)malloc(sizeof(PREVIEW_ON_ITEM)*usernum);
+	PREVIEW_ON_ITEM* rm_test = (PREVIEW_ON_ITEM*)malloc(sizeof(PREVIEW_ON_ITEM)*usernum);
+
+	USER_INFO* user_info = (USER_INFO*)malloc(sizeof(USER_INFO)*usernum);
+	ITEM_INFO* item_info = (ITEM_INFO*)malloc(sizeof(ITEM_INFO)*itemnum);
+
+	double *item_mean = (double *)malloc(sizeof(double) * itemnum);
+	// initialize the rating matrix
+	for (int i = 0; i < usernum; ++i)
 	{
-		biasV[i] = (double)(rand()%1000000)/1000000;
+		rm_train[i] = NULL;
+		rm_validation[i] = NULL;
+		rm_test[i] = NULL;
 	}
+	datasetRead(dataname, rm_train, rm_validation, rm_test, user_info, item_info, item_mean);
+
+	// the model matrix
+	double(*U)[D];
+	double(*V)[D];
+	double *bu;
+	double *bv;
+
+    U = (double(*)[D])malloc(sizeof(double)*D*usernum);
+	V = (double(*)[D])malloc(sizeof(double)*D*itemnum);
+	bu = (double*)malloc(sizeof(double)*usernum);
+	bv = (double*)malloc(sizeof(double)*itemnum);
+
+	//Matrix Factorization algorithms test
+	MFParam* mfParams = (MFParam*)(malloc(sizeof(MFParam) * 10));
+	int mfParamsNum = setMFParams(mfParams);
+	RECOMM_NODE(*recomm_list)[MAXN];
+	recomm_list = (RECOMM_NODE(*)[MAXN])malloc(sizeof(RECOMM_NODE)*usernum*MAXN);
+
+	for (int i = 0; i < mfParamsNum; ++i)
+	{
+		printMFParams(mfParams[i]);
+		memset(recomm_list, 0, sizeof(RECOMM_NODE)*usernum*MAXN);
+		mf_recomm(rm_train, rm_validation, rm_test, item_mean, train_mean, U, V, bu, bv, recomm_list, mfParams[i]);
+
+		// calculate the precision and recall
+		double precision, recall;
+		int Ns[] = { 2, 5, 10, 20, 40, 60, 80, 100 };
+		for (int i = 0; i < 8; ++i)
+		{
+			PrecisionAndRecall(recomm_list, rm_test, usernum, &precision, &recall, Ns[i]);
+			printf("N=%d, precision: %f, recall: %f\n", Ns[i], precision, recall);
+		}
+
+		/*double auc;
+		auc = AUC(U, V, bv, rm_test, rm_train, usernum, itemnum, MF);
+		printf("auc:%f\n", auc);*/
+		//calculate the ndcg
+		/*double ndcg;
+		ndcg = nDCG(recomm_list, rm_test, usernum, IMPLISIT);
+		printf("NDCG:%f\n", ndcg);*/
+	}
+	
+
+	//bpr algorithms test
+	BPRParam* bprParams = (BPRParam*)(malloc(sizeof(BPRParam) * 10));
+	int bprParamsNum = setBPRParams(bprParams);
+	for (int i = 0; i < bprParamsNum; ++i)
+	{
+		printBPRParams(bprParams[i]);
+		memset(recomm_list, 0, sizeof(RECOMM_NODE)*usernum*MAXN);
+		bpr_recomm(rm_train, rm_validation, rm_test, item_mean, train_mean, U, V, recomm_list, bprParams[i]);
+
+		// calculate the precision and recall
+		double precision, recall;
+		PrecisionAndRecall(recomm_list, rm_test, usernum, &precision, &recall, MAXN);
+		printf("precision: %f, recall: %f\n", precision, recall);
+
+		double auc;
+		auc = AUC(U, V, bv, rm_test, rm_train, usernum, itemnum, BPR);
+		printf("auc:%f\n", auc);
+	}
+
+	system("pause");
+	return 0;
 }
+
